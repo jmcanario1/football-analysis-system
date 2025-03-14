@@ -1,0 +1,10 @@
+input_videos/
+output_videos/
+runs/
+stubs/
+models/
+*.mp4
+*.avi
+*.pkl
+*.pt
+*.jpg
