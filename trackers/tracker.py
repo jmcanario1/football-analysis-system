@@ -151,13 +151,16 @@ class Tracker:
             ball_dict = tracks["ball"][frame_num]
             referee_dict = tracks["referees"][frame_num]
 
-            # Draw Players
+            # Draw Players com cor de time
             for track_id, player in player_dict.items():
-                frame = self.draw_ellipse(frame, player["bbox"], (0, 0, 255), track_id)
+                team_color = tuple(map(int, player.get("team_color", [0, 0, 255])))  # vermelho se não definido
+                frame = self.draw_ellipse(frame, player["bbox"], team_color, track_id)
 
+            # Draw Referees (cor fixa amarela)
             for _, referee in referee_dict.items():
                 frame = self.draw_ellipse(frame, referee["bbox"], (0, 255, 255))
-            
+
+            # Draw Ball (cor fixa verde)
             for track_id, ball in ball_dict.items():
                 frame = self.draw_triangle(frame, ball["bbox"], (0, 255, 0))
                 
