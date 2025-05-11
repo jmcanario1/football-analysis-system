@@ -13,6 +13,9 @@ def main():
 
     tracks, possession_per_frame = tracker.get_object_tracks(video_frames, read_from_stub=False, stub_path="stubs/track_stubs.pkl")
 
+    #Interpolate ball positions
+    tracks['ball'] = tracker.interpolate_ball_positions(tracks['ball'])
+
 
     # Assign Player Teams
     team_assigner = TeamAssigner()
@@ -21,7 +24,6 @@ def main():
     for frame_num, player_track in enumerate(tracks['players']):
         for player_id, track in player_track.items():
             team = team_assigner.get_player_team(video_frames[frame_num], track['bbox'], player_id)
-            # print(f"Frame {frame_num} | Player {player_id} | Team: {team}")
             tracks['players'][frame_num][player_id]['team'] = team
             tracks['players'][frame_num][player_id]['team_color'] = team_assigner.team_colors.get(team, (255, 255, 255))
 
@@ -30,7 +32,7 @@ def main():
     output_video_frames = tracker.draw_annotations(video_frames, tracks, possession_per_frame)
 
     # Save video
-    save_video(output_video_frames, 'output_videos/posse-de-bola.avi')
+    save_video(output_video_frames, 'output_videos/posse-de-bola-V2.avi')
 
 if __name__ == '__main__':
     main()
