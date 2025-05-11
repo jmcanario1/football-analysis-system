@@ -1,0 +1,1 @@
+from .first_time_ball_detection import detectar_toques_de_primeira

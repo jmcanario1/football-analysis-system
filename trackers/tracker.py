@@ -26,7 +26,7 @@ class Tracker:
     def get_object_tracks(self, frames, read_from_stub=False, stub_path=None):
         if read_from_stub and stub_path is not None and os.path.exists(stub_path):
             with open(stub_path, 'rb') as f:
-                tracks = pickle.load(f)
+                tracks, possession_per_frame = pickle.load(f)
             print(f"[INFO] Tracks loaded from stub: {tracks}")  # Depuração aqui
             return tracks, []
 
@@ -91,7 +91,7 @@ class Tracker:
 
         if stub_path is not None:
             with open(stub_path, 'wb') as f:
-                pickle.dump(tracks, f)
+                pickle.dump((tracks, possession_per_frame), f)
 
         return tracks, possession_per_frame
 
@@ -163,8 +163,18 @@ class Tracker:
         cv2.circle(frame, (int(x_center), int(y_center)), 20, (0, 255, 0), 4)
         return frame
 
-    def draw_annotations(self, video_frames, tracks, possession_per_frame):
+    def draw_annotations(self, video_frames, tracks, possession_per_frame, toques):
         output_video_frames = []
+
+        # Mapeia os frames que têm toque de primeira
+        toque_frames = set()
+        toque_jogadores = {}
+
+        for toque in toques:
+            for f in range(toque['start'], toque['end'] + 1):
+                toque_frames.add(f)
+                toque_jogadores[f] = toque['jogador_id']
+
         for frame_num, frame in enumerate(video_frames):
             frame = frame.copy()
 
@@ -192,9 +202,35 @@ class Tracker:
                 if player:
                     frame = self.draw_possession_visual(frame, player["bbox"])
 
+            # Destacar toque de primeira
+            if frame_num in toque_frames:
+                jogador_id = toque_jogadores.get(frame_num)
+                jogador = player_dict.get(jogador_id)
+                if jogador:
+                    x, y = get_center_of_bbox(jogador["bbox"])
+
+                    # Texto flutuante
+                    cv2.putText(
+                        frame,
+                        "TOQUE DE PRIMEIRA!",
+                        (int(x - 100), int(y - 40)),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.8,
+                        (0, 0, 255),
+                        3,
+                        cv2.LINE_AA
+                    )
+
+                    # Círculo especial vermelho
+                    cv2.circle(frame, (int(x), int(y)), 25, (0, 0, 255), 5)
+
+                    # Salva o frame como imagem
+                    cv2.imwrite(f"output_frames/toque_{frame_num}.jpg", frame)
+
             output_video_frames.append(frame)
 
         return output_video_frames
+
 
     def interpolate_ball_positions(self, ball_positions):
         ball_positions = [x.get(1, {}).get('bbox', []) for x in ball_positions]
